@@ -15,20 +15,33 @@ def transliterate_to_hindi(text):
 
 # ----------------------
 # Category Model
-# ----------------------
+from django.core.exceptions import ValidationError
+
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
-    
+
     class Meta:
         verbose_name_plural = "Categories"
-        
+
+    def clean(self):
+        # Transliterate before checking duplicates
+        hindi_name = transliterate_to_hindi(self.name)
+
+        # Check if Hindi version already exists
+        if Category.objects.filter(name=hindi_name).exclude(id=self.id).exists():
+            raise ValidationError("This Category already exists!")
+
     def save(self, *args, **kwargs):
-        # Transliterate category name to Hindi
+        # First validate (this triggers the popup error)
+        self.full_clean()
+
+        # Convert to Hindi before saving
         self.name = transliterate_to_hindi(self.name)
         super().save(*args, **kwargs)
-    
+
     def __str__(self):
         return self.name
+
 
 
 # ----------------------
@@ -47,7 +60,16 @@ class Reporter(models.Model):
     def __str__(self):
         return self.user.username
 
+class location(models.Model):   # If this is intended to be a separate table
+    name = models.CharField(max_length=200)
 
+    def save(self, *args, **kwargs):
+        if self.name:
+            self.name = transliterate_to_hindi(self.name)
+        super().save(*args, **kwargs)
+        
+    def __str__(self):
+        return self.name
 # ----------------------
 # Article Model
 # ----------------------
@@ -57,7 +79,7 @@ class Article(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='articles')
     reporter = models.ForeignKey(Reporter, on_delete=models.SET_NULL, null=True, blank=True)
     rank = models.IntegerField(default=0)
-    
+    location = models.ForeignKey(location, on_delete=models.SET_NULL, null=True, blank=True)
     # Featured media
     
     published_date = models.DateTimeField(auto_now_add=True)
