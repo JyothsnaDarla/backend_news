@@ -1,0 +1,25 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<h1>Generate AI Article</h1>
+<form method="post">
+    {% csrf_token %}
+    <p>Title: <input type="text" name="title" /></p>
+    <p>Category:
+        <select name="category">
+            <option value="">--Select--</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <p>Reporter:
+        <select name="reporter">
+            <option value="">--Select--</option>
+            {% for rep in reporters %}
+            <option value="{{ rep.id }}">{{ rep.user.username }}</option>
+            {% endfor %}
+        </select>
+    </p>
+    <p><input type="submit" value="Generate Article" class="default"></p>
+</form>
+{% endblock %}
